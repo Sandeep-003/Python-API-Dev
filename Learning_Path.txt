@@ -1,7 +1,7 @@
 1 . Dependencies with FastAPI
 pip freeze
 pip install -r requirements.txt
-
+# & D:/CREATION/WebDev/.venv/Scripts/Activate.ps1 // Activate virtual environment in PowerShell
 2. Creating a server
 
 pip install fastapi uvicorn
