@@ -1,0 +1,292 @@
+1 . Dependencies with FastAPI
+pip freeze
+pip install -r requirements.txt
+
+2. Creating a server
+
+pip install fastapi uvicorn
+uvicorn 01_fastAPI:app --reload //Reload flag will keep an eye of any update in your code and restart the server.
+
+2.1 Decorators in python
+
+Decorators in Python are a powerful feature that allow you to modify or enhance the behavior of functions
+or classes without changing their actual code. A decorator is typically a function that takes another
+function as an argument, adds some functionality, and returns a new function.
+Decorators are often used for logging, access control, timing, caching, and more.
+
+def my_decorator(func):
+    def wrapper():
+        print("Before function runs")
+        func()
+        print("After function runs")
+    return wrapper
+
+@my_decorator
+def say_hello():
+    print("Hello!")
+
+say_hello()
+
+example : 
+app = FastAPI()
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the root"}
+
+3. HTTP request methods
+
+HTTP request methods define the purpose of an HTTP request, such as retrieving, creating, 
+updating, or deleting resources. Common methods include GET (retrieve data), POST (submit data),
+PUT (replace data), DELETE (remove data), PATCH (modify data), HEAD (metadata only),
+OPTIONS (communication options), TRACE (diagnostics), and CONNECT (tunneling). 
+Methods differ in safety, idempotency, and cacheability; for example, GET is safe, idempotent,
+and cacheable, while POST is not.
+
+3.1 Path Operations.
+The fast API run through your code and try to find out the Method/Path?URL that you tried to hit. 
+The first Path Operations that is defined in your code will be executed and rest will be ignored.
+So order of the mehod does matter.
+
+3.2: 
+
+
+4. pydantic
+
+To define schema for sending and receiving data in FastAPI, Pydantic is used.
+Pydantic is a data validation and settings management library for Python, based on Python type annotations.
+It allows you to define data models using standard Python types, and automatically validates and parses
+input data to ensure it matches the expected schema. Pydantic is widely used in FastAPI to define request
+and response models, ensuring data integrity and providing clear error messages when data is invalid.
+Models are created by subclassing `BaseModel`, and fields are defined as class attributes with type hints.
+
+5. Synchronous vs Asynchronous
+
+Synchronous (def):
+
+Each request is handled one at a time per worker.
+If a request is waiting for a slow operation (like a database query), the worker is blocked and cannot handle other requests.
+Simpler to use with libraries that are not async-aware (like standard SQLAlchemy ORM).
+Asynchronous (async def):
+
+Requests can be paused while waiting for I/O, allowing the worker to handle other requests in the meantime.
+More efficient for high-concurrency scenarios, especially when dealing with many slow I/O operations.
+Requires all I/O libraries used in the endpoint to support async (e.g., async SQLAlchemy, async database drivers).
+
+6. Basic Postgres commands
+
+-- Connect to a database ex: \c database_name
+
+-- List all databases  ex: \l
+
+-- List all tables in the current database ex: \dt
+
+-- Show table schema ex: \d table_name
+
+-- Create a new database ex: CREATE DATABASE dbname;
+
+-- Create a new table
+CREATE TABLE tablename (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100)
+);
+Example
+CREATE TABLE users (
+    sn SERIAL NOT NULL,
+    user_id VARCHAR PRIMARY KEY UNIQUE NOT NULL,
+    email VARCHAR NOT NULL UNIQUE,
+    password VARCHAR NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Insert data into a table ex: INSERT INTO tablename (name) VALUES ('example');
+
+-- Query data from a table ex: SELECT * FROM tablename;
+
+-- Update data in a table ex: UPDATE tablename SET name = 'newname' WHERE id = 1;
+
+-- Add a column to an existing table ex: ALTER TABLE tablename ADD COLUMN column_name data_type;
+
+-- Delete data from a table ex: DELETE FROM tablename WHERE id = 1;
+-- Delete a table ex: DROP TABLE tablename;
+-- Exit psql ex: \q
+
+-- Show current connection info ex: \conninfo
+
+-- Export query results to a CSV file ex: \copy (SELECT * FROM tablename) TO 'output.csv' CSV HEADER
+
+-- Import data from a CSV file ex: \copy tablename FROM 'input.csv' CSV HEADER
+
+# To run your FastAPI application using uvicorn, use the following command:
+uvicorn filename:app --reload
+
+# Replace 'filename' with your Python file name (without .py extension), and 'app' with your FastAPI instance name.
+# Example:
+uvicorn 01_fastAPI:app --reload
+
+7. Hashing User Passwords and Secure Storage
+
+When creating user accounts, always hash passwords before storing them in the database. Never store plain-text passwords.
+
+**How to hash passwords in FastAPI:**
+
+- Use the `passlib` library with the `bcrypt` algorithm for secure password hashing.
+- Example setup in `utils.py`:
+    ```python
+    from passlib.context import CryptContext
+
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    def hash(password: str):
+        return pwd_context.hash(password)
+    ```
+**Why hash passwords?**
+- Hashing transforms the password into a secure, irreversible format.
+- Even if the database is compromised, attackers cannot easily recover the original passwords.
+- Bcrypt is a strong, industry-standard algorithm for password security.
+
+**Best practices:**
+- Always hash passwords before storing.
+- Never log or expose plain-text passwords.
+- Use a reputable hashing library (like passlib).
+
+8. FastAPI Routers
+
+FastAPI routers allow you to organize your API endpoints into separate, modular files or sections. 
+This helps keep your codebase clean, maintainable, and scalable, especially as your application grows.
+
+**Theory:**
+- A router is an instance of `APIRouter` from FastAPI.
+- You define endpoints on the router just like on the main app.
+- Routers can be included in the main FastAPI app using `app.include_router()`.
+- Routers support grouping endpoints by functionality, versioning, or resource type.
+- You can add dependencies, tags, and prefixes to routers for better organization and documentation.
+
+**Example:**
+# In your router file (e.g., items.py)
+from fastapi import APIRouter
+router = APIRouter(
+    prefix="/items",  # Prefix for all routes in this router
+    tags=["Items"]    # Tags for all routes in this router. It helps in grouping the routes in the documentation
+)
+@router.get("/")
+async def read_items():
+    return [{"item_id": "Foo"}]
+# In your main application file
+from fastapi import FastAPI
+app = FastAPI()
+app.include_router(router)
+
+9. JWT Authentication with FastAPI
+
+JSON Web Tokens (JWT) are a compact, URL-safe means of representing claims to be transferred between two parties.
+They are commonly used for authentication and authorization in web applications.
+
+pip install  python-jose[cryptography] passlib[bcrypt] python-multipart
+
+**How JWT works:**
+1. User logs in with credentials.
+2. Server verifies credentials and generates a JWT, which includes user information and an expiration time.
+3. JWT is sent back to the client and stored (e.g., in local storage).
+4. For subsequent requests, the client includes the JWT in the Authorization header.
+5. Server verifies the JWT and grants access to protected resources if valid.
+**Setting up JWT in FastAPI:**
+- Use the `pyjwt` library to create and verify JWTs.
+- Define a secret key and algorithm for signing the tokens.
+- Create utility functions to generate and decode tokens.
+import jwt
+from datetime import datetime, timedelta
+
+SECRET_KEY = "your_secret_key"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def decode_access_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.PyJWTError:
+        return None
+
+**Protecting routes:**
+- Use FastAPI's `Depends` to create a dependency that verifies the JWT.
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
+router = APIRouter(
+    prefix="/posts", # Prefix for all routes in this router
+    dependencies=[Depends(get_current_user)]
+)
+
+- Apply this dependency to routes that require authentication.
+- This ensures that only requests with a valid JWT can access these routes.
+- You can also add role-based access control by including user roles in the JWT payload and checking them in the dependency function.
+- Example of a protected route:
+@router.get("/protected-route")
+async def read_protected_route(current_user: dict = Depends(get_current_user)):
+    return {"message": "This is a protected route", "user": current_user}   
+- This route will only be accessible if a valid JWT is provided in the request.
+
+
+10. Database Migrations with Alembic
+Simliar to github version control for code, Alembic provides version control for your database schema. It tracks changes to your 
+database structure over time, allowing you to apply, revert, and manage schema changes in a systematic way.
+Alembic is a lightweight database migration tool for SQLAlchemy that helps you manage and version database schema changes over time. 
+It automatically detects changes in your models and generates migration scripts, allowing you to evolve your database schema safely 
+and consistently across different environments.
+Alembic works by maintaining a version history of your database schema through migration scripts. Each migration script represents a set of 
+changes to the schema, such as adding or modifying tables and columns. Alembic uses a versioning system to track which migrations have been 
+applied to the database, allowing you to upgrade or downgrade the schema as needed.
+
+Documentation link: https://alembic.sqlalchemy.org/en/latest/
+pip install alembic
+
+**Setting up Alembic:**
+1. Initialize Alembic in your project:
+   alembic init alembic
+2. Configure the `alembic.ini` file to set your database connection string.
+3. Edit the `env.py` file in the Alembic directory to include your SQLAlchemy models.
+**Creating and applying migrations:**       
+1. Create a new migration script:
+   alembic revision --autogenerate -m "Migration message"
+2. Apply the migration to the database:
+   alembic upgrade head
+**Best practices:**
+- Always review the autogenerated migration scripts before applying them.
+- Keep your migration scripts under version control.
+- Test migrations in a staging environment before applying to production.
+- Use descriptive messages for migration scripts to document changes.
+
+11. CORS policy in FastAPI
+CORS (Cross-Origin Resource Sharing) is a security feature implemented by web browsers to restrict web applications 
+running on one origin (domain) from accessing resources on a different origin. This is done to prevent malicious 
+websites from making unauthorized requests to other websites on behalf of the user.
+
+To enable CORS in FastAPI, you can use the `CORSMiddleware` provided by the `fastapi.middleware.cors` module.
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+# Adjust the `allow_origins`, `allow_methods`, and `allow_headers` parameters as needed for your application.
+
+12. 
